@@ -1,4 +1,4 @@
-# SecureScan
+pip install gunicorn whitenoise# SecureScan
 
 A Django web app with two parts:
 
