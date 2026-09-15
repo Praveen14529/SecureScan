@@ -8,6 +8,8 @@ A Django web app with two parts:
    get a risk-scored report with mitigations and PDF/Word export.
 2. **Risk Register** (`/risk-register/`) — the original manual checklist-based
    asset risk assessment tool.
+   
+<img width="1917" height="1000" alt="image" src="https://github.com/user-attachments/assets/4c5b67a3-42e0-4688-86af-51dd7eeb3bd8" />
 
 ## Why it's structured this way
 
