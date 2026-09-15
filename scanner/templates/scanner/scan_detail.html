@@ -1,0 +1,107 @@
+{% extends "assessments/base.html" %}
+{% block title %}Scan Report{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h3 class="page-title mb-1">Scan report</h3>
+    <div class="page-subtitle">
+      {{ scan.hostname|default:"Unknown host" }} · {{ scan.os_summary|default:"Unknown OS" }} · {{ scan.started_at|date:"d M Y, H:i" }}
+      {% if scan.submitted_via_api %}<span class="pill pill-info ms-2"><i class="ti ti-device-desktop me-1"></i>Submitted from local scanner</span>{% endif %}
+    </div>
+  </div>
+  {% if scan.status == "completed" %}
+  <div class="d-flex gap-2">
+    <a href="{% url 'scan_export_pdf' scan.public_id %}" class="btn btn-outline-danger btn-sm"><i class="ti ti-file-type-pdf me-1"></i>Export PDF</a>
+    <a href="{% url 'scan_export_docx' scan.public_id %}" class="btn btn-outline-primary btn-sm"><i class="ti ti-file-type-docx me-1"></i>Export Word</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if scan.status == "failed" %}
+  <div class="alert alert-danger">Scan failed: {{ scan.error_message }}</div>
+{% endif %}
+
+{% if scan.status == "completed" %}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <p class="metric-label mb-2">Overall risk score</p>
+      <p class="metric-value mb-2">{{ score }}<span class="fs-6 text-muted"> / 100</span></p>
+      <span class="pill pill-{{ level_key }}">{{ level_label }}</span>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <p class="metric-label mb-3">Findings by severity</p>
+      <div class="d-flex justify-content-between">
+        <div class="text-center"><span class="pill pill-critical">{{ severity_counts.critical }}</span></div>
+        <div class="text-center"><span class="pill pill-high">{{ severity_counts.high }}</span></div>
+        <div class="text-center"><span class="pill pill-medium">{{ severity_counts.medium }}</span></div>
+        <div class="text-center"><span class="pill pill-low">{{ severity_counts.low }}</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <canvas id="catChart" height="110"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-4">
+  <form class="row g-2" method="get">
+    <div class="col-auto">
+      <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All categories</option>
+        <option value="system" {% if selected_category == "system" %}selected{% endif %}>System Configuration</option>
+        <option value="network" {% if selected_category == "network" %}selected{% endif %}>Network / Open Ports</option>
+        <option value="software" {% if selected_category == "software" %}selected{% endif %}>Installed Software</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="severity" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All severities</option>
+        <option value="critical" {% if selected_severity == "critical" %}selected{% endif %}>Critical</option>
+        <option value="high" {% if selected_severity == "high" %}selected{% endif %}>High</option>
+        <option value="medium" {% if selected_severity == "medium" %}selected{% endif %}>Medium</option>
+        <option value="low" {% if selected_severity == "low" %}selected{% endif %}>Low</option>
+        <option value="info" {% if selected_severity == "info" %}selected{% endif %}>Info</option>
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="vstack gap-2 mb-5">
+  {% for f in findings %}
+  <div class="finding-row">
+    <div class="d-flex justify-content-between align-items-start gap-3">
+      <div class="fw-semibold" style="font-size:0.95rem;">{{ f.title }}</div>
+      <span class="pill pill-{{ f.severity }} flex-shrink-0">{{ f.get_severity_display }}</span>
+    </div>
+    <div class="text-muted small mt-1">{{ f.get_category_display }}</div>
+    {% if f.description %}<p class="mb-1 mt-2" style="font-size:0.92rem;">{{ f.description }}</p>{% endif %}
+    {% if f.evidence %}<div class="small text-muted"><b>Evidence:</b> {{ f.evidence }}</div>{% endif %}
+    {% if f.mitigation %}<div class="small mt-2" style="color:#15803d;"><b>Mitigation:</b> {{ f.mitigation }}</div>{% endif %}
+  </div>
+  {% empty %}
+  <div class="text-center text-muted py-4">No findings match this filter.</div>
+  {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('catChart'), {
+  type: 'doughnut',
+  data: {
+    labels: [{% for row in breakdown %}"{{ row.category|escapejs }}",{% endfor %}],
+    datasets: [{
+      data: [{% for row in breakdown %}{{ row.risk_points }},{% endfor %}],
+      backgroundColor: ['#c2410c', '#a16207', '#b91c1c']
+    }]
+  },
+  options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } } }
+});
+</script>
+{% endif %}
+{% endblock %}

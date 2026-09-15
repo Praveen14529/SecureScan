@@ -1,0 +1,88 @@
+{% extends "assessments/base.html" %}
+{% block title %}SecureScan — Free Vulnerability Scanner{% endblock %}
+{% block content %}
+
+<div class="text-center py-5 mb-3">
+  <span class="pill pill-info mb-3"><i class="ti ti-sparkles me-1"></i>Free & open source</span>
+  <h1 class="page-title mb-3" style="font-size: 2.4rem;">Scan your PC for security risks</h1>
+  <p class="page-subtitle mx-auto mb-4" style="max-width: 560px; font-size: 1.05rem;">
+    Download a small scanner, run it on your own computer, and get a risk-scored
+    report with clear mitigation steps — open ports, weak configs, and risky software.
+  </p>
+  <div class="d-flex justify-content-center gap-3 flex-wrap">
+    <a href="{% url 'download_agent' %}" class="btn btn-primary btn-lg px-4">
+      <i class="ti ti-download me-1"></i>Download scanner (.py)
+    </a>
+    <form method="post" action="{% url 'scan_run_demo' %}" id="demoForm">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-primary btn-lg px-4" id="demoBtn">
+        <i class="ti ti-player-play me-1"></i>Try a live demo
+      </button>
+    </form>
+  </div>
+  <p class="text-muted small mt-2">The demo scans this server so you can see a sample report — download the scanner above to check your own machine.</p>
+</div>
+
+<div class="row g-3 mb-5">
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="ti ti-download" style="color: var(--brand); font-size: 1.2rem;"></i>
+        <span class="fw-semibold">1. Download</span>
+      </div>
+      <p class="text-muted small mb-0">Get <code>scan_agent.py</code> — a single Python file, no install beyond <code>pip install psutil requests</code>.</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="ti ti-player-play" style="color: var(--brand); font-size: 1.2rem;"></i>
+        <span class="fw-semibold">2. Run it locally</span>
+      </div>
+      <p class="text-muted small mb-0"><code>python scan_agent.py</code> — it scans your machine and prints a summary in your terminal.</p>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <i class="ti ti-report" style="color: var(--brand); font-size: 1.2rem;"></i>
+        <span class="fw-semibold">3. View your report</span>
+      </div>
+      <p class="text-muted small mb-0">Results are submitted to this dashboard automatically — a private link opens in your browser.</p>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0">Your recent scans</h5>
+</div>
+
+<div class="card">
+  <table class="table mb-0 align-middle">
+    <thead>
+      <tr><th>Scan</th><th>Host</th><th>Source</th><th>Risk Score</th><th>Risk Level</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.scan.started_at|date:"d M Y, H:i" }}{% if row.scan.client_label %} — {{ row.scan.client_label }}{% endif %}</td>
+        <td>{{ row.scan.hostname|default:"-" }}</td>
+        <td>{% if row.scan.submitted_via_api %}<i class="ti ti-device-desktop me-1"></i>Your machine{% else %}<i class="ti ti-server me-1"></i>Demo{% endif %}</td>
+        <td>{% if row.scan.status == "completed" %}{{ row.score }} / 100{% else %}-{% endif %}</td>
+        <td>{% if row.scan.status == "completed" %}<span class="pill pill-{{ row.level_key }}">{{ row.level_label }}</span>{% endif %}</td>
+        <td class="text-end"><a href="{% url 'scan_detail' row.scan.public_id %}" class="btn btn-sm btn-outline-secondary">View report</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-5">No scans yet — download the scanner above, or try the live demo.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+document.getElementById('demoForm').addEventListener('submit', function() {
+  document.getElementById('demoBtn').disabled = true;
+  document.getElementById('demoBtn').innerHTML = '<i class="ti ti-loader-2 me-1"></i>Scanning…';
+});
+</script>
+{% endblock %}

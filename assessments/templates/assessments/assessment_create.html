@@ -1,0 +1,18 @@
+{% extends "assessments/base.html" %}
+{% block title %}New Assessment{% endblock %}
+{% block content %}
+<h3 class="page-title mb-4">New Assessment — {{ asset.name }}</h3>
+<div class="card p-4" style="max-width:600px;">
+<form method="post">
+  {% csrf_token %}
+  {% for field in form %}
+    <div class="mb-3">
+      <label class="form-label">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+    </div>
+  {% endfor %}
+  <button type="submit" class="btn btn-primary">Start Assessment</button>
+</form>
+</div>
+{% endblock %}

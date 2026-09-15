@@ -1,0 +1,76 @@
+{% extends "assessments/base.html" %}
+{% block title %}{{ assessment.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <h3 class="page-title mb-0">{{ assessment.title }}</h3>
+    <div class="text-muted">Asset: {{ assessment.asset.name }} ({{ assessment.asset.get_criticality_display }} criticality) · Assessor: {{ assessment.assessor|default:"-" }}</div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if assessment.status != "completed" %}
+      <a href="{% url 'assessment_fill' assessment.pk %}" class="btn btn-primary btn-sm">Continue Editing</a>
+    {% endif %}
+    <a href="{% url 'assessment_export_pdf' assessment.pk %}" class="btn btn-outline-danger btn-sm">Export PDF</a>
+    <a href="{% url 'assessment_export_docx' assessment.pk %}" class="btn btn-outline-primary btn-sm">Export Word</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card p-3 text-center h-100">
+      <div class="text-muted small">Overall Risk Score</div>
+      <div class="score-big">{% if score is not None %}{{ score }}{% else %}–{% endif %}<span class="fs-6 text-muted"> / 100</span></div>
+      {% if level_key %}<span class="pill pill-{{ level_key }} align-self-center mt-2">{{ level_label }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 text-center h-100">
+      <div class="text-muted small">Compliance</div>
+      <div class="score-big">{% if compliance is not None %}{{ compliance }}%{% else %}–{% endif %}</div>
+      <div class="text-muted small mt-2">Status: {{ assessment.get_status_display }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 h-100">
+      <canvas id="catChart" height="120"></canvas>
+    </div>
+  </div>
+</div>
+
+{% if breakdown %}
+<div class="card p-3 mb-4">
+  <h5>Risk by Category</h5>
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Category</th><th>Compliance</th><th>Risk</th></tr></thead>
+    <tbody>
+      {% for row in breakdown %}
+      <tr><td>{{ row.category }}</td><td>{{ row.compliance_pct }}%</td><td>{{ row.risk_pct }}%</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if assessment.notes %}
+<div class="card p-3 mb-4">
+  <h5>Assessor Notes</h5>
+  <p class="mb-0">{{ assessment.notes }}</p>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('catChart'), {
+  type: 'bar',
+  data: {
+    labels: [{% for row in breakdown %}"{{ row.category|escapejs }}",{% endfor %}],
+    datasets: [{
+      label: 'Risk %',
+      data: [{% for row in breakdown %}{{ row.risk_pct }},{% endfor %}],
+      backgroundColor: '#cf222e'
+    }]
+  },
+  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+});
+</script>
+{% endblock %}

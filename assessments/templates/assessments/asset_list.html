@@ -1,0 +1,27 @@
+{% extends "assessments/base.html" %}
+{% block title %}Assets{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="page-title mb-0">Assets</h3>
+  <a href="{% url 'asset_create' %}" class="btn btn-primary">+ New Asset</a>
+</div>
+<div class="card">
+  <table class="table mb-0 align-middle">
+    <thead><tr><th>Name</th><th>Type</th><th>Criticality</th><th>Owner</th><th>Assessments</th><th></th></tr></thead>
+    <tbody>
+    {% for asset in assets %}
+      <tr>
+        <td><a href="{% url 'asset_detail' asset.pk %}">{{ asset.name }}</a></td>
+        <td>{{ asset.get_asset_type_display }}</td>
+        <td>{{ asset.get_criticality_display }}</td>
+        <td>{{ asset.owner|default:"-" }}</td>
+        <td>{{ asset.assessment_count }}</td>
+        <td class="text-end"><a href="{% url 'assessment_create' asset.pk %}" class="btn btn-sm btn-outline-primary">New Assessment</a></td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No assets yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

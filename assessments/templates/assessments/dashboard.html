@@ -1,0 +1,99 @@
+{% extends "assessments/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="page-title mb-0">Risk Register</h3>
+  <a href="{% url 'asset_create' %}" class="btn btn-primary">+ New Asset</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card p-3 text-center">
+      <div class="text-muted small">Assets</div>
+      <div class="score-big">{{ total_assets }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 text-center">
+      <div class="text-muted small">Assessments</div>
+      <div class="score-big">{{ total_assessments }}</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3">
+      <canvas id="levelChart" height="70"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="card p-3 mb-4">
+  <form class="row g-2" method="get">
+    <div class="col-auto">
+      <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All statuses</option>
+        {% for key, label in status_choices %}
+          <option value="{{ key }}" {% if key == selected_status %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-auto">
+      <select name="criticality" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="">All criticalities</option>
+        {% for key, label in criticality_choices %}
+          <option value="{{ key }}" {% if key == selected_criticality %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <table class="table mb-0 align-middle">
+    <thead>
+      <tr>
+        <th>Assessment</th>
+        <th>Asset</th>
+        <th>Criticality</th>
+        <th>Status</th>
+        <th>Risk Score</th>
+        <th>Risk Level</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><a href="{% url 'assessment_detail' row.assessment.pk %}">{{ row.assessment.title }}</a></td>
+        <td>{{ row.assessment.asset.name }}</td>
+        <td>{{ row.assessment.asset.get_criticality_display }}</td>
+        <td>{{ row.assessment.get_status_display }}</td>
+        <td>{% if row.score is not None %}{{ row.score }} / 100{% else %}<span class="text-muted">Not scored</span>{% endif %}</td>
+        <td>{% if row.level_key %}<span class="pill pill-{{ row.level_key }}">{{ row.level_label }}</span>{% else %}-{% endif %}</td>
+        <td class="text-end">
+          <a href="{% url 'assessment_detail' row.assessment.pk %}" class="btn btn-sm btn-outline-secondary">View</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-4">No assessments yet. Create an asset to get started.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('levelChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Low', 'Medium', 'High', 'Critical'],
+    datasets: [{
+      label: 'Assessments by risk level',
+      data: [{{ level_counts.low }}, {{ level_counts.medium }}, {{ level_counts.high }}, {{ level_counts.critical }}],
+      backgroundColor: ['#1a7f37', '#9a6700', '#bc4c00', '#cf222e']
+    }]
+  },
+  options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
+});
+</script>
+{% endblock %}

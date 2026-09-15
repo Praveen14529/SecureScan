@@ -1,0 +1,47 @@
+{% extends "assessments/base.html" %}
+{% load assessment_extras %}
+{% block title %}Fill Assessment{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="page-title mb-0">{{ assessment.title }}</h3>
+    <div class="text-muted">Asset: {{ assessment.asset.name }} · Status: {{ assessment.get_status_display }}</div>
+  </div>
+  <a href="{% url 'assessment_detail' assessment.pk %}" class="btn btn-outline-secondary btn-sm">View Report</a>
+</div>
+
+<form method="post">
+{% csrf_token %}
+{% for category in categories %}
+  <div class="card p-3 mb-3">
+    <h5>{{ category.name }}</h5>
+    {% if category.description %}<p class="text-muted small">{{ category.description }}</p>{% endif %}
+    {% for question in category.questions.all %}
+      {% if question.is_active %}
+      {% with existing_r=existing|get_item:question.id %}
+      <div class="border-top pt-3 mt-3">
+        <div class="fw-semibold">{{ question.text }} <span class="pill pill-info">weight {{ question.weight }}</span></div>
+        {% if question.guidance %}<div class="text-muted small mb-2">{{ question.guidance }}</div>{% endif %}
+        <div class="btn-group" role="group">
+          {% for val, label in answer_choices %}
+          <input type="radio" class="btn-check" name="q_{{ question.id }}" id="q_{{ question.id }}_{{ val }}" value="{{ val }}"
+            {% if existing_r and existing_r.answer == val %}checked{% endif %}>
+          <label class="btn btn-outline-primary btn-sm" for="q_{{ question.id }}_{{ val }}">{{ label }}</label>
+          {% endfor %}
+        </div>
+        <input type="text" name="notes_{{ question.id }}" class="form-control form-control-sm mt-2"
+               placeholder="Evidence / notes (optional)"
+               value="{% if existing_r %}{{ existing_r.evidence_notes }}{% endif %}">
+      </div>
+      {% endwith %}
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endfor %}
+
+<div class="d-flex gap-2 mb-5">
+  <button type="submit" class="btn btn-outline-primary">Save Progress</button>
+  <button type="submit" name="mark_completed" value="1" class="btn btn-success">Save &amp; Mark Completed</button>
+</div>
+</form>
+{% endblock %}
